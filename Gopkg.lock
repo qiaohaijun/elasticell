@@ -152,7 +152,7 @@
     "cql",
     "cql/parser"
   ]
-  revision = "204281ece0c2ab4718f489a6b50cf971fd74be78"
+  revision = "69c55b6cb0a7fb4d20fe3afd3afc9fa9b9bb157d"
 
 [[projects]]
   branch = "master"
