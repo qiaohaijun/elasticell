@@ -20,7 +20,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/deepfabric/elasticell/pkg/log"
@@ -140,7 +139,7 @@ func NewStore(clusterID uint64, pdClient *pd.Client, meta metapb.Store, engine s
 	s.startAt = uint32(time.Now().Unix())
 	s.engine = engine
 	s.pdClient = pdClient
-	s.snapshotManager = newDefaultSnapshotManager(cfg, engine.GetDataEngine())
+	s.snapshotManager = newDefaultSnapshotManager(cfg, engine.GetDataEngine(), s)
 	s.pendingSnapshots = make(map[uint64]mraft.SnapshotMessageHeader)
 	s.trans = newTransport(s, pdClient, s.notify)
 	s.keyRanges = util.NewCellTree()
@@ -396,13 +395,9 @@ func (s *Store) startCellSplitCheckTask() {
 }
 
 func (s *Store) startServeIndexTask() {
-	var seq_auto uint64
-	for i := 0; i < globalCfg.NumIdxReqQueues; i++ {
-		s.runner.RunCancelableTask(func(ctx context.Context) {
-			seq := atomic.AddUint64(&seq_auto, 1) - 1
-			s.readyToServeIndex(ctx, seq)
-		})
-	}
+	s.runner.RunCancelableTask(func(ctx context.Context) {
+		s.readyToServeIndex(ctx)
+	})
 	s.runner.RunCancelableTask(func(ctx context.Context) {
 		s.readyToServeQuery(ctx)
 	})
